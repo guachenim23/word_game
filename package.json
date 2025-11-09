@@ -1,0 +1,17 @@
+{
+  "name": "multiplayer-word-game",
+  "version": "1.0.0",
+  "description": "A multiplayer word guessing game similar to Termo",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

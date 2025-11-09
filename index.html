@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Palavras</title>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+}
+
+.screen {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Tela inicial */
+#initial-screen {
+    text-align: center;
+}
+
+.input-group {
+    margin: 20px 0;
+}
+
+input[type="text"] {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 200px;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Tela do jogo */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+#game-grid {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.grid-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+}
+
+.grid-cell {
+    aspect-ratio: 1;
+    border: 2px solid #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.grid-cell.filled {
+    border-color: #666;
+}
+
+.grid-cell.green {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+
+.grid-cell.yellow {
+    background-color: #ffd700;
+    color: white;
+    border-color: #ffd700;
+}
+
+.grid-cell.gray {
+    background-color: #666;
+    color: white;
+    border-color: #666;
+}
+
+#keyboard {
+    display: grid;
+    gap: 5px;
+}
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.key {
+    padding: 15px;
+    min-width: 30px;
+    text-align: center;
+    background-color: #e0e0e0;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.key.disabled {
+    background-color: #666;
+    color: white;
+    cursor: not-allowed;
+}
+
+/* Tela de fim de jogo */
+#end-screen {
+    text-align: center;
+}
+
+#game-stats {
+    margin: 20px 0;
+}
+
+#leaderboard {
+    margin: 20px 0;
+}
+
+#leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+#leaderboard-table th,
+#leaderboard-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+#leaderboard-table th {
+    background-color: #f5f5f5;
+}
+
+#play-again {
+    margin-top: 20px;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Tela inicial -->
+        <div id="initial-screen" class="screen">
+            <h1>Jogo de Palavras</h1>
+            <div class="input-group">
+                <input type="text" id="player-name" placeholder="Seu nome" maxlength="15">
+            </div>
+            <div class="button-group">
+                <button id="create-room">Criar Sala</button>
+                <button id="join-room-btn">Entrar em Sala</button>
+            </div>
+            <div id="join-room-form" class="hidden">
+                <input type="text" id="room-code" placeholder="Código da sala" maxlength="5">
+                <button id="join-room-submit">Entrar</button>
+            </div>
+        </div>
+
+        <!-- Tela do jogo -->
+        <div id="game-screen" class="screen hidden">
+            <div class="game-header">
+                <div id="room-info">Sala: <span id="room-code-display"></span></div>
+                <div id="timer">Tempo: 0:00</div>
+            </div>
+
+            <div id="game-grid">
+                <!-- 6 linhas com 5 slots cada serão criadas via JavaScript -->
+            </div>
+
+            <div id="keyboard">
+                <!-- Teclado QWERTY será criado via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Tela de fim de jogo -->
+        <div id="end-screen" class="screen hidden">
+            <h2 id="end-message"></h2>
+            <div id="game-stats">
+                <p>Tentativas: <span id="attempts-count"></span></p>
+                <p>Tempo: <span id="time-elapsed"></span></p>
+            </div>
+            <div id="leaderboard">
+                <h3>Placar</h3>
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Posição</th>
+                            <th>Jogador</th>
+                            <th>Tentativas</th>
+                            <th>Tempo</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button id="play-again">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+class WordGame {
+    constructor() {
+        this.words = ['TERMO', 'PAPEL', 'FESTA', 'PRAIA', 'LIVRO', 'SONHO', 'MUNDO', 'FELIZ', 'CAMPO', 'TERRA'];
+        this.currentAttempt = 0;
+        this.currentPosition = 0;
+        this.gameActive = false;
+        this.startTime = null;
+        this.playerName = '';
+        this.roomCode = '';
+        this.setupEventListeners();
+        this.createGameGrid();
+        this.createKeyboard();
+
+        // Carregar salas existentes do localStorage ou inicializar array vazio
+        this.rooms = JSON.parse(localStorage.getItem('wordGameRooms')) || [];
+    }
+
+    setupEventListeners() {
+        document.getElementById('create-room').addEventListener('click', () => this.createRoom());
+        document.getElementById('join-room-btn').addEventListener('click', () => {
+            document.getElementById('join-room-form').classList.remove('hidden');
+        });
+        document.getElementById('join-room-submit').addEventListener('click', () => this.joinRoom());
+        document.getElementById('play-again').addEventListener('click', () => this.resetGame());
+        
+        document.addEventListener('keydown', (e) => {
+            if (!this.gameActive) return;
+            
+            if (e.key === 'Enter') {
+                this.submitGuess();
+            } else if (e.key === 'Backspace') {
+                this.deleteLetter();
+            } else if (/^[A-Za-z]$/.test(e.key)) {
+                this.addLetter(e.key.toUpperCase());
+            }
+        });
+    }
+
+    createGameGrid() {
+        const gameGrid = document.getElementById('game-grid');
+        gameGrid.innerHTML = '';
+        
+        for (let i = 0; i < 6; i++) {
+            const row = document.createElement('div');
+            row.className = 'grid-row';
+            
+            for (let j = 0; j < 5; j++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.dataset.row = i;
+                cell.dataset.col = j;
+                row.appendChild(cell);
+            }
+            
+            gameGrid.appendChild(row);
+        }
+    }
+
+    createKeyboard() {
+        const keyboard = document.getElementById('keyboard');
+        const layout = [
+            ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+            ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+            ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫']
+        ];
+
+        keyboard.innerHTML = '';
+        layout.forEach(row => {
+            const keyboardRow = document.createElement('div');
+            keyboardRow.className = 'keyboard-row';
+            
+            row.forEach(key => {
+                const button = document.createElement('button');
+                button.className = 'key';
+                button.textContent = key;
+                button.dataset.key = key;
+                button.addEventListener('click', () => {
+                    if (key === 'ENTER') {
+                        this.submitGuess();
+                    } else if (key === '⌫') {
+                        this.deleteLetter();
+                    } else {
+                        this.addLetter(key);
+                    }
+                });
+                keyboardRow.appendChild(button);
+            });
+            
+            keyboard.appendChild(keyboardRow);
+        });
+    }
+
+    generateRoomCode() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code;
+        do {
+            code = '';
+            for (let i = 0; i < 5; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+        } while (this.rooms.some(room => room.code === code));
+        return code;
+    }
+
+    createRoom() {
+        this.playerName = document.getElementById('player-name').value.trim();
+        if (!this.playerName) {
+            alert('Por favor, insira seu nome');
+            return;
+        }
+
+        const roomCode = this.generateRoomCode();
+        const word = this.words[Math.floor(Math.random() * this.words.length)];
+        
+        const room = {
+            code: roomCode,
+            word: word,
+            players: [{
+                name: this.playerName,
+                attempts: 0,
+                startTime: Date.now()
+            }],
+            leaderboard: []
+        };
+
+        this.rooms.push(room);
+        localStorage.setItem('wordGameRooms', JSON.stringify(this.rooms));
+        
+        this.roomCode = roomCode;
+        this.startGame(word);
+    }
+
+    joinRoom() {
+        this.playerName = document.getElementById('player-name').value.trim();
+        const roomCode = document.getElementById('room-code').value.trim().toUpperCase();
+        
+        if (!this.playerName || !roomCode) {
+            alert('Por favor, preencha todos os campos');
+            return;
+        }
+
+        const room = this.rooms.find(r => r.code === roomCode);
+        if (!room) {
+            alert('Sala não encontrada');
+            return;
+        }
+
+        room.players.push({
+            name: this.playerName,
+            attempts: 0,
+            startTime: Date.now()
+        });
+        localStorage.setItem('wordGameRooms', JSON.stringify(this.rooms));
+
+        this.roomCode = roomCode;
+        this.startGame(room.word);
+    }
+
+    startGame(word) {
+        this.currentWord = word;
+        document.getElementById('initial-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        document.getElementById('room-code-display').textContent = this.roomCode;
+        this.gameActive = true;
+        this.startTime = Date.now();
+        this.updateTimer();
+    }
+
+    updateTimer() {
+        if (!this.gameActive) return;
+        
+        const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        document.getElementById('timer').textContent = 
+            `Tempo: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        requestAnimationFrame(() => this.updateTimer());
+    }
+
+    addLetter(letter) {
+        if (!this.gameActive || this.currentPosition >= 5) return;
+
+        const cell = document.querySelector(
+            `.grid-cell[data-row="${this.currentAttempt}"][data-col="${this.currentPosition}"]`
+        );
+        cell.textContent = letter;
+        cell.classList.add('filled');
+        this.currentPosition++;
+    }
+
+    deleteLetter() {
+        if (!this.gameActive || this.currentPosition === 0) return;
+
+        this.currentPosition--;
+        const cell = document.querySelector(
+            `.grid-cell[data-row="${this.currentAttempt}"][data-col="${this.currentPosition}"]`
+        );
+        cell.textContent = '';
+        cell.classList.remove('filled');
+    }
+
+    submitGuess() {
+        if (!this.gameActive || this.currentPosition !== 5) return;
+
+        const guess = Array.from(document.querySelectorAll(
+            `.grid-cell[data-row="${this.currentAttempt}"]`
+        )).map(cell => cell.textContent).join('');
+
+        const result = this.checkGuess(guess);
+        this.updateUI(guess, result);
+
+        if (guess === this.currentWord || this.currentAttempt === 5) {
+            this.endGame(guess === this.currentWord);
+        } else {
+            this.currentAttempt++;
+            this.currentPosition = 0;
+        }
+    }
+
+    checkGuess(guess) {
+        const result = Array(5).fill('gray');
+        const wordArray = this.currentWord.split('');
+        const guessArray = guess.split('');
+
+        // Primeiro, marque as letras verdes (posição correta)
+        for (let i = 0; i < 5; i++) {
+            if (guessArray[i] === wordArray[i]) {
+                result[i] = 'green';
+                wordArray[i] = null;
+                guessArray[i] = null;
+            }
+        }
+
+        // Depois, marque as letras amarelas (letra correta, posição errada)
+        for (let i = 0; i < 5; i++) {
+            if (guessArray[i] === null) continue;
+            
+            const wordIndex = wordArray.indexOf(guessArray[i]);
+            if (wordIndex !== -1) {
+                result[i] = 'yellow';
+                wordArray[wordIndex] = null;
+            }
+        }
+
+        return result;
+    }
+
+    updateUI(guess, result) {
+        // Atualizar células do grid
+        result.forEach((color, index) => {
+            const cell = document.querySelector(
+                `.grid-cell[data-row="${this.currentAttempt}"][data-col="${index}"]`
+            );
+            cell.classList.add(color);
+            
+            // Atualizar teclado
+            const letter = guess[index];
+            const key = document.querySelector(`.key[data-key="${letter}"]`);
+            if (key) {
+                if (color === 'green') {
+                    key.classList.add('green');
+                } else if (color === 'yellow' && !key.classList.contains('green')) {
+                    key.classList.add('yellow');
+                } else if (color === 'gray' && !key.classList.contains('green') && !key.classList.contains('yellow')) {
+                    key.classList.add('disabled');
+                }
+            }
+        });
+    }
+
+    endGame(isWinner) {
+        this.gameActive = false;
+        const endTime = Date.now();
+        const timeElapsed = (endTime - this.startTime) / 1000;
+
+        // Atualizar leaderboard
+        const room = this.rooms.find(r => r.code === this.roomCode);
+        const score = {
+            playerName: this.playerName,
+            attempts: this.currentAttempt + 1,
+            time: timeElapsed
+        };
+        room.leaderboard.push(score);
+        room.leaderboard.sort((a, b) => {
+            if (a.attempts !== b.attempts) return a.attempts - b.attempts;
+            return a.time - b.time;
+        });
+        localStorage.setItem('wordGameRooms', JSON.stringify(this.rooms));
+
+        // Atualizar UI
+        const endScreen = document.getElementById('end-screen');
+        const endMessage = document.getElementById('end-message');
+        const attemptsCount = document.getElementById('attempts-count');
+        const timeElapsedElement = document.getElementById('time-elapsed');
+        const leaderboardTable = document.querySelector('#leaderboard-table tbody');
+
+        endMessage.textContent = isWinner ? 
+            'Parabéns! Você acertou!' : 
+            `Fim de jogo! A palavra era ${this.currentWord}`;
+        
+        attemptsCount.textContent = this.currentAttempt + 1;
+        timeElapsedElement.textContent = 
+            `${Math.floor(timeElapsed / 60)}:${(Math.floor(timeElapsed) % 60).toString().padStart(2, '0')}`;
+
+        // Preencher o placar
+        leaderboardTable.innerHTML = '';
+        room.leaderboard.forEach((score, index) => {
+            const row = leaderboardTable.insertRow();
+            row.insertCell(0).textContent = index + 1;
+            row.insertCell(1).textContent = score.playerName;
+            row.insertCell(2).textContent = score.attempts;
+            row.insertCell(3).textContent = 
+                `${Math.floor(score.time / 60)}:${(Math.floor(score.time) % 60).toString().padStart(2, '0')}`;
+        });
+
+        document.getElementById('game-screen').classList.add('hidden');
+        endScreen.classList.remove('hidden');
+    }
+
+    resetGame() {
+        document.getElementById('end-screen').classList.add('hidden');
+        document.getElementById('initial-screen').classList.remove('hidden');
+        this.currentAttempt = 0;
+        this.currentPosition = 0;
+        this.gameActive = false;
+        this.startTime = null;
+        this.roomCode = '';
+        this.currentWord = '';
+        this.createGameGrid();
+        this.createKeyboard();
+    }
+}
+
+// Iniciar o jogo quando a página carregar
+window.addEventListener('load', () => {
+    new WordGame();
+});
+    </script>
+</body>
+</html>
