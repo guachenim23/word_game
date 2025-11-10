@@ -284,17 +284,17 @@
                 this.roomCode = '';
                 this.isOwner = false;
                 this.updateInterval = null;
+                this.gameActive = false;
                 
                 // Inicializar o jogo buscando dados do servidor
                 this.initializeGame();
                 
-                this.createGrid();
-                this.createKeyboard();
+                // Mostrar o menu inicial
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('menu').classList.remove('hidden');
+                
+                // Configurar eventos globais
                 this.setupEventListeners();
-
-                // Começar o jogo
-                this.gameActive = true;
-                console.log("Palavra:", this.targetWord); // Para debug
             }
 
             createGrid() {
