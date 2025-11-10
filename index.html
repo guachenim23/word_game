@@ -702,8 +702,10 @@
             }
         }
 
-        // Iniciar o jogo
-        window.onload = () => new WordGame();
+        // Iniciar o jogo e tornar a instância global
+        window.onload = () => {
+            window.game = new WordGame();
+        };
     </script>
 </body>
 </html>
