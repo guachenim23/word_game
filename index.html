@@ -276,13 +276,13 @@
             async initializeGame() {
                 try {
                     // Buscar a lista de palavras do servidor
-                    const response = await fetch('http://localhost:8000/words');
+                    const response = await fetch('https://word-game-api-mfko.onrender.com/words');
                     const data = await response.json();
                     this.words = data.words;
                     this.validWords = new Set(this.words);
                     
                     // Buscar uma palavra aleatória do servidor
-                    const randomResponse = await fetch('http://localhost:8000/random');
+                    const randomResponse = await fetch('https://word-game-api-mfko.onrender.com/random');
                     const randomData = await randomResponse.json();
                     this.targetWord = randomData.word;
                     
@@ -297,7 +297,7 @@
 
             async isValidWord(word) {
                 try {
-                    const response = await fetch(`http://localhost:8000/validate/${word}`);
+                    const response = await fetch(`https://word-game-api-mfko.onrender.com/validate/${word}`);
                     const data = await response.json();
                     return data.valid;
                 } catch (error) {
