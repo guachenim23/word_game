@@ -21,7 +21,11 @@ WORDS = [
     'LUCAS', 'BRUNO', 'CLARA', 'CHUVA', 'FOLHA', 'MANGA', 'PALHA', 'PEIXE', 'VINHO', 'SENHA',
     'CASAL', 'PILHA', 'BOLSA', 'TELHA', 'MALHA', 'CALÇA', 'PLACA', 'CLUBE', 'CORPO', 'FILHO',
     'PORTA', 'CARTA', 'GENTE', 'MOEDA', 'PEDRA', 'PLANO', 'LINHA', 'FILME', 'MAGIA', 'PASTA',
-    'POLVO', 'PONTE', 'ROUPA', 'SOFIA', 'VIDRO', 'LIMÃO', 'LARVA', 'FLOR', 'MANTO', 'NOME'
+    'POLVO', 'PONTE', 'ROUPA', 'SOFIA', 'VIDRO', 'LIMÃO', 'LARVA', 'FLOR', 'MANTO', 'NOME',
+    # Novas palavras adicionadas:
+    'HERÓI', 'NOITE', 'IRMÃO', 'DANÇA', 'FOGÃO', 'ÁTOMO', 'AREIA', 'POETA', 'FLORA', 'SUAVE',
+    'VERDE', 'DOIDO', 'PEIXE', 'BEIJO', 'NUVEM', 'CAFÉ', 'ADVÉM', 'FOSSO', 'FONTE', 'BRIGA',
+    'VELOZ', 'NOBRE', 'RITMO', 'IDADE', 'HIATO', 'ZEBRA', 'ÍNDIO', 'MOTOR', 'FAVOR', 'ETAPA'
 ]
 
 VALID_WORDS = set(WORDS)
