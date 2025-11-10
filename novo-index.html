@@ -55,10 +55,6 @@
             color: white;
         }
 
-        .cell.filled {
-            border-color: #888;
-        }
-
         .keyboard {
             display: grid;
             gap: 8px;
@@ -112,21 +108,9 @@
         .key.absent {
             background: #3a3a3c;
         }
-
-        .error {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 0, 0, 0.8);
-            padding: 10px 20px;
-            border-radius: 5px;
-            display: none;
-        }
     </style>
 </head>
 <body>
-    <div class="error" id="error"></div>
     <div class="game-container">
         <div id="grid" class="grid">
             <!-- Grid será criado via JavaScript -->
@@ -139,22 +123,24 @@
     <script>
         class WordGame {
             constructor() {
-                this.words = [];
-                this.validWords = new Set();
-                this.attempts = ['', '', '', '', '', ''];
-                this.currentAttempt = 0;
-                this.gameOver = false;
+                this.words = [
+                    'TERMO', 'PAPEL', 'FESTA', 'PRAIA', 'LIVRO', 'SONHO', 'MUNDO', 'FELIZ', 'CAMPO', 'TERRA',
+                    'MAÇÃ', 'FORÇA', 'GRAÇA', 'PREÇO', 'PRAÇA', 'HOUVE', 'PARIS', 'PEDRO', 'MARIA', 'PAULO',
+                    'JULHO', 'NATAL', 'PIZZA', 'GARÇA', 'MASSA', 'POÇÃO', 'SORTE', 'CORES', 'PORTO', 'PATOS'
+                ];
+                this.validWords = new Set([
+                    ...this.words,
+                    'CASAL', 'PILHA', 'BOLSA', 'TELHA', 'MALHA', 'CALÇA', 'PLACA', 'CLUBE', 'CORPO', 'FILHO'
+                ]);
                 
-                // Inicializar o jogo buscando dados do servidor
-                this.initializeGame();
+                this.currentWord = this.words[Math.floor(Math.random() * this.words.length)];
+                this.currentAttempt = 0;
+                this.currentGuess = '';
+                this.gameOver = false;
                 
                 this.createGrid();
                 this.createKeyboard();
                 this.setupEventListeners();
-
-                // Começar o jogo
-                this.gameActive = true;
-                console.log("Palavra:", this.targetWord); // Para debug
             }
 
             createGrid() {
@@ -164,12 +150,10 @@
                 for (let i = 0; i < 6; i++) {
                     const row = document.createElement('div');
                     row.className = 'row';
-                    row.dataset.row = i;
                     
                     for (let j = 0; j < 5; j++) {
                         const cell = document.createElement('div');
                         cell.className = 'cell';
-                        cell.dataset.col = j;
                         row.appendChild(cell);
                     }
                     
@@ -232,121 +216,61 @@
             }
 
             addLetter(letter) {
-                if (!this.gameActive || this.currentAttempt >= 6) return;
-                
-                const currentWord = this.attempts[this.currentAttempt];
-                if (currentWord.length < 5) {
-                    this.attempts[this.currentAttempt] = currentWord + letter;
+                if (this.currentGuess.length < 5) {
+                    this.currentGuess += letter;
                     this.updateDisplay();
                 }
             }
 
             deleteLetter() {
-                if (!this.gameActive || this.currentAttempt >= 6) return;
-                
-                const currentWord = this.attempts[this.currentAttempt];
-                if (currentWord.length > 0) {
-                    this.attempts[this.currentAttempt] = currentWord.slice(0, -1);
+                if (this.currentGuess.length > 0) {
+                    this.currentGuess = this.currentGuess.slice(0, -1);
                     this.updateDisplay();
                 }
             }
 
             updateDisplay() {
-                for (let i = 0; i < 6; i++) {
-                    const row = document.querySelector(`.row[data-row="${i}"]`);
-                    const word = this.attempts[i];
-                    
-                    for (let j = 0; j < 5; j++) {
-                        const cell = row.children[j];
-                        cell.textContent = word[j] || '';
-                        cell.classList.toggle('filled', !!word[j]);
-                    }
-                }
-            }
-
-            showError(message) {
-                const error = document.getElementById('error');
-                error.textContent = message;
-                error.style.display = 'block';
-                setTimeout(() => {
-                    error.style.display = 'none';
-                }, 2000);
-            }
-
-            async initializeGame() {
-                try {
-                    // Buscar a lista de palavras do servidor
-                    const response = await fetch('http://localhost:8000/words');
-                    const data = await response.json();
-                    this.words = data.words;
-                    this.validWords = new Set(this.words);
-                    
-                    // Buscar uma palavra aleatória do servidor
-                    const randomResponse = await fetch('http://localhost:8000/random');
-                    const randomData = await randomResponse.json();
-                    this.targetWord = randomData.word;
-                    
-                    // Começar o jogo
-                    this.gameActive = true;
-                    console.log("Palavra:", this.targetWord); // Para debug
-                } catch (error) {
-                    this.showError('Erro ao conectar com o servidor. Verifique se o servidor está rodando.');
-                    console.error('Erro:', error);
-                }
-            }
-
-            async isValidWord(word) {
-                try {
-                    const response = await fetch(`http://localhost:8000/validate/${word}`);
-                    const data = await response.json();
-                    return data.valid;
-                } catch (error) {
-                    console.error('Erro ao validar palavra:', error);
-                    return false;
-                }
-            }
-
-            async submitGuess() {
-                if (!this.gameActive || this.currentAttempt >= 6) return;
+                const row = document.querySelectorAll('.row')[this.currentAttempt];
+                const cells = row.children;
                 
-                const guess = this.attempts[this.currentAttempt];
-                
-                if (guess.length !== 5) {
-                    this.showError('Palavra incompleta!');
+                for (let i = 0; i < 5; i++) {
+                    cells[i].textContent = this.currentGuess[i] || '';
+                }
+            }
+
+            submitGuess() {
+                if (this.currentGuess.length !== 5) return;
+                if (!this.validWords.has(this.currentGuess)) {
+                    alert('Palavra inválida!');
                     return;
                 }
 
-                const isValid = await this.isValidWord(guess);
-                if (!isValid) {
-                    this.showError('Palavra inválida!');
-                    return;
-                }
-
-                const result = this.checkGuess(guess);
+                const result = this.checkGuess();
                 this.updateColors(result);
                 
-                if (guess === this.targetWord || this.currentAttempt === 5) {
+                if (this.currentGuess === this.currentWord || this.currentAttempt === 5) {
                     this.gameOver = true;
                     setTimeout(() => {
-                        alert(guess === this.targetWord ? 
+                        alert(this.currentGuess === this.currentWord ? 
                             'Parabéns! Você acertou!' : 
-                            `Game Over! A palavra era ${this.targetWord}`);
+                            `Game Over! A palavra era ${this.currentWord}`);
                     }, 500);
                 } else {
                     this.currentAttempt++;
+                    this.currentGuess = '';
                 }
             }
 
-            checkGuess(guess) {
+            checkGuess() {
                 const result = Array(5).fill('absent');
-                const targetArray = this.targetWord.split('');
-                const guessArray = guess.split('');
+                const wordArray = this.currentWord.split('');
+                const guessArray = this.currentGuess.split('');
                 
                 // Primeiro, encontrar letras corretas
                 for (let i = 0; i < 5; i++) {
-                    if (guessArray[i] === targetArray[i]) {
+                    if (guessArray[i] === wordArray[i]) {
                         result[i] = 'correct';
-                        targetArray[i] = null;
+                        wordArray[i] = null;
                         guessArray[i] = null;
                     }
                 }
@@ -355,10 +279,10 @@
                 for (let i = 0; i < 5; i++) {
                     if (guessArray[i] === null) continue;
                     
-                    const index = targetArray.indexOf(guessArray[i]);
+                    const index = wordArray.indexOf(guessArray[i]);
                     if (index !== -1) {
                         result[i] = 'present';
-                        targetArray[index] = null;
+                        wordArray[index] = null;
                     }
                 }
                 
@@ -366,20 +290,16 @@
             }
 
             updateColors(result) {
-                const row = document.querySelector(`.row[data-row="${this.currentAttempt}"]`);
+                const row = document.querySelectorAll('.row')[this.currentAttempt];
                 const cells = row.children;
                 const keys = document.querySelectorAll('.key');
-                const guess = this.attempts[this.currentAttempt];
                 
                 for (let i = 0; i < 5; i++) {
                     const cell = cells[i];
-                    const letter = guess[i];
+                    const letter = this.currentGuess[i];
                     const status = result[i];
                     
-                    // Adicionar classes com animação
-                    setTimeout(() => {
-                        cell.classList.add(status);
-                    }, i * 100);
+                    cell.classList.add(status);
                     
                     // Atualizar teclado
                     keys.forEach(key => {
