@@ -546,60 +546,7 @@
                 alert(message);
             }
 
-            constructor() {
-                this.words = [];
-                this.validWords = new Set();
-                this.attempts = ['', '', '', '', '', ''];
-                this.currentAttempt = 0;
-                this.gameOver = false;
-                this.playerName = '';
-                this.roomCode = '';
-                this.isOwner = false;
-                this.gameActive = false;
-                
-                this.ws = new WebSocket('ws://localhost:8000/ws/game');
-                
-                this.ws.onopen = () => {
-                    console.log('Conectado ao servidor');
-                };
-                
-                this.ws.onclose = () => {
-                    this.showError('Conexão perdida. Por favor, recarregue a página.');
-                };
-                
-                this.ws.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    switch (data.type) {
-                        case 'ROOM_CREATED':
-                            this.roomCode = data.roomCode;
-                            this.isOwner = true;
-                            this.showWaitingRoom();
-                            break;
-                        
-                        case 'PLAYER_JOINED':
-                            this.updatePlayerList(data.players);
-                            break;
-                        
-                        case 'GAME_STARTED':
-                            this.targetWord = data.word;
-                            this.startGameScreen();
-                            break;
-                        
-                        case 'GUESS_RESULT':
-                            this.handleGuessResult(data);
-                            break;
-                        
-                        case 'ERROR':
-                            this.showError(data.message);
-                            break;
-                    }
-                };
-                
-                // Inicializar o jogo
-                this.createGrid();
-                this.createKeyboard();
-                this.setupEventListeners();
-            }
+
 
             updatePlayerList(players) {
                 const playersList = document.getElementById('players-list');
