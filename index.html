@@ -231,12 +231,12 @@
             <input type="text" id="player-name" placeholder="Seu nome" maxlength="15">
         </div>
         <div class="menu-buttons">
-            <button class="menu-button" onclick="game.createRoom()">Criar Sala</button>
-            <button class="menu-button" onclick="game.showJoinRoom()">Entrar em Sala</button>
+            <button class="menu-button" id="create-room-btn">Criar Sala</button>
+            <button class="menu-button" id="show-join-room-btn">Entrar em Sala</button>
         </div>
         <div id="join-room-form" class="player-input hidden">
             <input type="text" id="room-code-input" placeholder="Código da sala" maxlength="5">
-            <button class="menu-button" onclick="game.joinRoom()">Entrar</button>
+            <button class="menu-button" id="join-room-btn">Entrar</button>
         </div>
     </div>
 
@@ -245,13 +245,13 @@
         <h2 class="menu-title">Sala de Espera</h2>
         <div class="room-info">
             <p>Código da sala:</p>
-            <div class="room-code" id="room-code-display" onclick="game.copyRoomCode()"></div>
+            <div class="room-code" id="room-code-display"></div>
         </div>
         <div class="players-list" id="players-list">
             <!-- Lista de jogadores será preenchida via JavaScript -->
         </div>
         <div class="menu-buttons">
-            <button id="start-game-btn" class="menu-button hidden" onclick="game.startGame()">
+            <button id="start-game-btn" class="menu-button hidden">
                 Iniciar Jogo
             </button>
         </div>
@@ -338,6 +338,13 @@
                 this.createGrid();
                 this.createKeyboard();
                 this.setupEventListeners();
+                
+                // Configurar botões do menu
+                document.getElementById('create-room-btn').addEventListener('click', () => this.createRoom());
+                document.getElementById('show-join-room-btn').addEventListener('click', () => this.showJoinRoom());
+                document.getElementById('join-room-btn').addEventListener('click', () => this.joinRoom());
+                document.getElementById('room-code-display').addEventListener('click', () => this.copyRoomCode());
+                document.getElementById('start-game-btn').addEventListener('click', () => this.startGame());
                 
                 // Mostrar menu inicial
                 document.getElementById('game-screen').classList.add('hidden');
@@ -702,10 +709,12 @@
             }
         }
 
-        // Iniciar o jogo e tornar a instância global
-        window.onload = () => {
+        // Criar instância do jogo e inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Inicializando o jogo...');
             window.game = new WordGame();
-        };
+            console.log('Jogo inicializado com sucesso');
+        });
     </script>
 </body>
 </html>
