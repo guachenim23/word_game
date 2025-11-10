@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 import random
 import string
-from typing import List, Dict
+from typing import List, Dict, Set, Optional
+import json
 
 app = FastAPI()
 
@@ -17,6 +18,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Gerenciador de conexões WebSocket
+class ConnectionManager:
+    def __init__(self):
+        # key: room_code, value: set of WebSocket connections
+        self.room_connections: Dict[str, Set[WebSocket]] = {}
+        # key: WebSocket, value: room_code
+        self.connection_rooms: Dict[WebSocket, str] = {}
+    
+    async def connect(self, websocket: WebSocket, room_code: str):
+        if room_code not in self.room_connections:
+            self.room_connections[room_code] = set()
+        self.room_connections[room_code].add(websocket)
+        self.connection_rooms[websocket] = room_code
+    
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.connection_rooms:
+            room_code = self.connection_rooms[websocket]
+            self.room_connections[room_code].remove(websocket)
+            if not self.room_connections[room_code]:
+                del self.room_connections[room_code]
+            del self.connection_rooms[websocket]
+    
+    async def broadcast_to_room(self, room_code: str, message: dict):
+        if room_code in self.room_connections:
+            for connection in self.room_connections[room_code]:
+                await connection.send_json(message)
+
+manager = ConnectionManager()
+
 # Estruturas para o modo multiplayer
 class Player(BaseModel):
     name: str
@@ -24,6 +54,7 @@ class Player(BaseModel):
     attempts: int = 0
     is_owner: bool = False
     completed: bool = False
+    current_guess: Optional[str] = None
 
 class Room(BaseModel):
     code: str
@@ -79,97 +110,206 @@ def generate_room_code():
         if code not in ROOMS:
             return code
 
-@app.post("/room/create")
-async def create_room(player_name: str):
-    """Cria uma nova sala e retorna o código"""
-    code = generate_room_code()
-    word = random.choice(WORDS)
-    
-    room = Room(
-        code=code,
-        word=word,
-        players={
-            player_name: Player(name=player_name, is_owner=True)
-        }
-    )
-    ROOMS[code] = room
-    return {"code": code}
+@app.websocket("/ws/game")
+async def websocket_endpoint(websocket: WebSocket):
+    """Endpoint WebSocket principal para o jogo"""
+    try:
+        await websocket.accept()
+        
+        async for raw_data in websocket:
+            try:
+                data = json.loads(raw_data)
+                message_type = data.get("type")
+                player_name = data.get("playerName")
+                
+                if message_type == "CREATE_ROOM":
+                    code = generate_room_code()
+                    word = random.choice(WORDS)
+                    
+                    room = Room(
+                        code=code,
+                        word=word,
+                        players={
+                            player_name: Player(name=player_name, is_owner=True)
+                        }
+                    )
+                    ROOMS[code] = room
+                    
+                    await manager.connect(websocket, code)
+                    await websocket.send_json({
+                        "type": "ROOM_CREATED",
+                        "roomCode": code
+                    })
+                
+                elif message_type == "JOIN_ROOM":
+                    code = data.get("roomCode")
+                    if code not in ROOMS:
+                        await websocket.send_json({
+                            "type": "ERROR",
+                            "message": "Sala não encontrada"
+                        })
+                        continue
+                    
+                    room = ROOMS[code]
+                    if room.started:
+                        await websocket.send_json({
+                            "type": "ERROR",
+                            "message": "Jogo já começou"
+                        })
+                        continue
+                        
+                    if player_name in room.players:
+                        await websocket.send_json({
+                            "type": "ERROR",
+                            "message": "Nome já está em uso"
+                        })
+                        continue
+                    
+                    room.players[player_name] = Player(name=player_name)
+                    await manager.connect(websocket, code)
+                    
+                    # Broadcast para todos na sala
+                    await manager.broadcast_to_room(code, {
+                        "type": "PLAYER_JOINED",
+                        "players": list(room.players.keys())
+                    })
+                
+                elif message_type == "START_GAME":
+                    code = data.get("roomCode")
+                    if code not in ROOMS:
+                        await websocket.send_json({
+                            "type": "ERROR",
+                            "message": "Sala não encontrada"
+                        })
+                        continue
+                    
+                    room = ROOMS[code]
+                    if not room.players[player_name].is_owner:
+                        await websocket.send_json({
+                            "type": "ERROR",
+                            "message": "Apenas o dono pode iniciar o jogo"
+                        })
+                        continue
+                    
+                    room.started = True
+                    await manager.broadcast_to_room(code, {
+                        "type": "GAME_STARTED",
+                        "word": room.word
+                    })
+                
+                elif message_type == "GUESS":
+                    code = data.get("roomCode")
+                    guess = data.get("guess").upper()
+                    
+                    if code not in ROOMS:
+                        await websocket.send_json({
+                            "type": "ERROR",
+                            "message": "Sala não encontrada"
+                        })
+                        continue
+                    
+                    room = ROOMS[code]
+                    if not room.started:
+                        await websocket.send_json({
+                            "type": "ERROR",
+                            "message": "Jogo ainda não começou"
+                        })
+                        continue
+                    
+                    player = room.players[player_name]
+                    target_word = room.word
+                    result = []
+                    
+                    # Verificar cada letra da tentativa
+                    for i, letter in enumerate(guess):
+                        if letter == target_word[i]:
+                            result.append("green")
+                        elif letter in target_word:
+                            result.append("yellow")
+                        else:
+                            result.append("gray")
+                    
+                    player.attempts += 1
+                    is_correct = guess == target_word
+                    
+                    if is_correct:
+                        player.completed = True
+                        player.score = max(100 - (player.attempts - 1) * 10, 10)
+                        
+                        # Verificar se todos terminaram
+                        if all(p.completed for p in room.players.values()):
+                            room.finished = True
+                    
+                    # Preparar leaderboard se o jogo terminou
+                    leaderboard = None
+                    if room.finished or player.attempts >= 6:
+                        leaderboard = [
+                            {
+                                "playerName": p.name,
+                                "attempts": p.attempts,
+                                "score": p.score
+                            }
+                            for p in room.players.values()
+                        ]
+                        leaderboard.sort(key=lambda x: (-x["score"], x["attempts"]))
+                    
+                    await manager.broadcast_to_room(code, {
+                        "type": "GUESS_RESULT",
+                        "result": result,
+                        "isCorrect": is_correct,
+                        "playerName": player_name,
+                        "leaderboard": leaderboard
+                    })
+            except json.JSONDecodeError:
+                await websocket.send_json({
+                    "type": "ERROR",
+                    "message": "Formato de mensagem inválido"
+                })
+            except Exception as e:
+                await websocket.send_json({
+                    "type": "ERROR",
+                    "message": str(e)
+                })
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
-@app.post("/room/join/{code}")
-async def join_room(code: str, player_name: str):
-    """Permite um jogador entrar em uma sala existente"""
+async def start_game(code: str, player_name: str, websocket: WebSocket):
+    """Função auxiliar para iniciar o jogo em uma sala"""
     if code not in ROOMS:
-        raise HTTPException(status_code=404, detail="Sala não encontrada")
-    
-    room = ROOMS[code]
-    if room.started:
-        raise HTTPException(status_code=400, detail="Jogo já começou")
-    if player_name in room.players:
-        raise HTTPException(status_code=400, detail="Nome já está em uso")
-    
-    room.players[player_name] = Player(name=player_name)
-    return {"code": code, "players": list(room.players.keys())}
-
-@app.post("/room/start/{code}")
-async def start_room(code: str, player_name: str):
-    """Inicia o jogo em uma sala"""
-    if code not in ROOMS:
-        raise HTTPException(status_code=404, detail="Sala não encontrada")
+        await websocket.send_json({
+            "type": "ERROR",
+            "message": "Sala não encontrada"
+        })
+        return False
     
     room = ROOMS[code]
     if not room.players[player_name].is_owner:
-        raise HTTPException(status_code=403, detail="Apenas o dono pode iniciar o jogo")
+        await websocket.send_json({
+            "type": "ERROR",
+            "message": "Apenas o dono pode iniciar o jogo"
+        })
+        return False
     
     room.started = True
-    return {"word": room.word}
+    await manager.broadcast_to_room(code, {
+        "type": "GAME_STARTED",
+        "word": room.word
+    })
+    return True
 
-@app.get("/room/{code}")
-async def get_room_status(code: str):
-    """Retorna o status atual da sala"""
-    if code not in ROOMS:
-        raise HTTPException(status_code=404, detail="Sala não encontrada")
-    
-    room = ROOMS[code]
-    return {
-        "started": room.started,
-        "finished": room.finished,
-        "players": [
-            {
-                "name": name,
-                "score": player.score,
-                "attempts": player.attempts,
-                "completed": player.completed
-            }
-            for name, player in room.players.items()
-        ]
-    }
+# Mantenha apenas os endpoints utilitários HTTP que não dependem do estado do jogo
+@app.get("/validate/{word}")
+async def validate_word(word: str):
+    """Verifica se uma palavra é válida para o jogo"""
+    word = word.upper()
+    if len(word) != 5:
+        raise HTTPException(status_code=400, detail="A palavra deve ter 5 letras")
+    return {"valid": word in VALID_WORDS}
 
-@app.post("/room/{code}/attempt")
-async def submit_attempt(code: str, player_name: str, attempt: str):
-    """Registra uma tentativa de um jogador"""
-    if code not in ROOMS:
-        raise HTTPException(status_code=404, detail="Sala não encontrada")
-    
-    room = ROOMS[code]
-    if not room.started:
-        raise HTTPException(status_code=400, detail="Jogo ainda não começou")
-    
-    player = room.players[player_name]
-    player.attempts += 1
-    
-    if attempt == room.word:
-        player.completed = True
-        player.score = max(100 - (player.attempts - 1) * 10, 10)
-        
-        # Verificar se todos terminaram
-        if all(p.completed for p in room.players.values()):
-            room.finished = True
-    
-    return {
-        "correct": attempt == room.word,
-        "finished": room.finished,
-        "score": player.score if player.completed else None
-    }
+@app.get("/words")
+async def get_words():
+    """Retorna a lista de palavras possíveis"""
+    return {"words": WORDS}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
