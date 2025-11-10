@@ -16,7 +16,7 @@ app.add_middleware(
         "http://localhost:8000",
         "http://localhost",
         "https://guachenim23.github.io",
-        "*"
+        "https://word-game-api-mfko.onrender.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -123,9 +123,6 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         await websocket.accept()
         print("Conexão WebSocket aceita")
-    except Exception as e:
-        print(f"Erro ao aceitar conexão WebSocket: {e}")
-        return
         
         async for raw_data in websocket:
             try:
