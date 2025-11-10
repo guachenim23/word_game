@@ -4,7 +4,7 @@ class WordGame {
         this.currentPosition = 0;
         this.gameActive = false;
         this.startTime = null;
-        this.ws = new WebSocket('ws://localhost:3000');
+        this.ws = new WebSocket('ws://localhost:8000/ws/game');
         this.playerName = '';
         this.roomCode = '';
         this.setupWebSocket();
@@ -14,6 +14,10 @@ class WordGame {
     }
 
     setupWebSocket() {
+        this.ws.onopen = () => {
+            console.log('WebSocket conectado');
+        };
+
         this.ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             switch (data.type) {
@@ -21,9 +25,16 @@ class WordGame {
                     this.roomCode = data.roomCode;
                     this.startGame();
                     break;
-                case 'JOINED_ROOM':
-                    this.roomCode = data.roomCode;
-                    this.startGame();
+                case 'PLAYER_JOINED':
+                    // Atualizar lista de jogadores
+                    this.updatePlayerList(data.players);
+                    if (this.roomCode) {
+                        this.startGame();
+                    }
+                    break;
+                case 'GAME_STARTED':
+                    this.word = data.word;
+                    this.gameActive = true;
                     break;
                 case 'GUESS_RESULT':
                     this.handleGuessResult(data);
@@ -32,6 +43,11 @@ class WordGame {
                     alert(data.message);
                     break;
             }
+        };
+
+        this.ws.onclose = () => {
+            console.log('WebSocket desconectado');
+            alert('Conexão perdida. Por favor, recarregue a página.');
         };
     }
 
@@ -271,6 +287,21 @@ class WordGame {
         this.roomCode = '';
         this.createGameGrid();
         this.createKeyboard();
+    }
+
+    updatePlayerList(players) {
+        const playerList = document.getElementById('player-list');
+        if (playerList) {
+            playerList.innerHTML = '';
+            players.forEach(player => {
+                const li = document.createElement('li');
+                li.textContent = player;
+                if (player === this.playerName) {
+                    li.classList.add('current-player');
+                }
+                playerList.appendChild(li);
+            });
+        }
     }
 }
 

@@ -290,17 +290,16 @@
                     ? 'wss://word-game-api-mfko.onrender.com/ws/game'
                     : 'ws://localhost:8000/ws/game';
                 
-                console.log('Conectando ao WebSocket:', wsUrl);
-                this.ws = new WebSocket(wsUrl);
+                this.wsUrl = wsUrl;
+                this.connectWebSocket();
                 
-                this.ws.onopen = () => {
-                    console.log('WebSocket conectado com sucesso');
-                };
-                
-                this.ws.onerror = (error) => {
-                    console.error('Erro no WebSocket:', error);
-                    this.showError('Erro de conexão com o servidor');
-                };
+                // Adicionar reconexão automática
+                setInterval(() => {
+                    if (this.ws.readyState === WebSocket.CLOSED) {
+                        console.log('Tentando reconectar...');
+                        this.connectWebSocket();
+                    }
+                }, 5000);
                 
                 this.ws.onclose = () => {
                     this.showError('Conexão perdida. Por favor, recarregue a página.');
@@ -676,6 +675,27 @@
                 }
                 
                 return result;
+            }
+
+            connectWebSocket() {
+                console.log('Conectando ao WebSocket:', this.wsUrl);
+                this.ws = new WebSocket(this.wsUrl);
+                
+                this.ws.onopen = () => {
+                    console.log('WebSocket conectado com sucesso');
+                };
+                
+                this.ws.onerror = (error) => {
+                    console.error('Erro no WebSocket:', error);
+                    this.showError('Erro de conexão com o servidor');
+                };
+
+                this.ws.onclose = (event) => {
+                    console.log('WebSocket desconectado:', event.code, event.reason);
+                    if (event.code !== 1000) { // 1000 é fechamento normal
+                        this.showError('Conexão perdida. Tentando reconectar...');
+                    }
+                };
             }
 
             updateColors(result) {
