@@ -11,6 +11,102 @@
             box-sizing: border-box;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
+        .menu-container {
+            padding: 20px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .menu-title {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .menu-button {
+            padding: 15px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .menu-button:hover {
+            background: #45a049;
+        }
+
+        .player-input {
+            margin: 20px 0;
+        }
+
+        .player-input input {
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .player-input input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .room-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .room-code {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        .players-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .players-list li {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .score {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -127,7 +223,47 @@
 </head>
 <body>
     <div class="error" id="error"></div>
-    <div class="game-container">
+    
+    <!-- Menu Principal -->
+    <div id="menu" class="menu-container">
+        <h1 class="menu-title">Jogo de Palavras</h1>
+        <div class="player-input">
+            <input type="text" id="player-name" placeholder="Seu nome" maxlength="15">
+        </div>
+        <div class="menu-buttons">
+            <button class="menu-button" onclick="game.createRoom()">Criar Sala</button>
+            <button class="menu-button" onclick="game.showJoinRoom()">Entrar em Sala</button>
+        </div>
+        <div id="join-room-form" class="player-input hidden">
+            <input type="text" id="room-code-input" placeholder="Código da sala" maxlength="5">
+            <button class="menu-button" onclick="game.joinRoom()">Entrar</button>
+        </div>
+    </div>
+
+    <!-- Sala de Espera -->
+    <div id="waiting-room" class="menu-container hidden">
+        <h2 class="menu-title">Sala de Espera</h2>
+        <div class="room-info">
+            <p>Código da sala:</p>
+            <div class="room-code" id="room-code-display" onclick="game.copyRoomCode()"></div>
+        </div>
+        <div class="players-list" id="players-list">
+            <!-- Lista de jogadores será preenchida via JavaScript -->
+        </div>
+        <div class="menu-buttons">
+            <button id="start-game-btn" class="menu-button hidden" onclick="game.startGame()">
+                Iniciar Jogo
+            </button>
+        </div>
+    </div>
+
+    <!-- Jogo -->
+    <div id="game-screen" class="game-container hidden">
+        <div class="room-info">
+            <div class="players-list" id="game-players-list">
+                <!-- Lista de jogadores será atualizada durante o jogo -->
+            </div>
+        </div>
         <div id="grid" class="grid">
             <!-- Grid será criado via JavaScript -->
         </div>
@@ -144,6 +280,10 @@
                 this.attempts = ['', '', '', '', '', ''];
                 this.currentAttempt = 0;
                 this.gameOver = false;
+                this.playerName = '';
+                this.roomCode = '';
+                this.isOwner = false;
+                this.updateInterval = null;
                 
                 // Inicializar o jogo buscando dados do servidor
                 this.initializeGame();
@@ -273,6 +413,149 @@
                 }, 2000);
             }
 
+            async createRoom() {
+                const nameInput = document.getElementById('player-name');
+                this.playerName = nameInput.value.trim();
+                
+                if (!this.playerName) {
+                    this.showError('Por favor, insira seu nome');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('https://word-game-api-mfko.onrender.com/room/create?' + new URLSearchParams({
+                        player_name: this.playerName
+                    }), {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    this.roomCode = data.code;
+                    this.isOwner = true;
+                    this.showWaitingRoom();
+                } catch (error) {
+                    this.showError('Erro ao criar sala');
+                    console.error('Erro:', error);
+                }
+            }
+
+            showJoinRoom() {
+                const joinForm = document.getElementById('join-room-form');
+                joinForm.classList.remove('hidden');
+            }
+
+            async joinRoom() {
+                const nameInput = document.getElementById('player-name');
+                const codeInput = document.getElementById('room-code-input');
+                
+                this.playerName = nameInput.value.trim();
+                const code = codeInput.value.trim().toUpperCase();
+                
+                if (!this.playerName || !code) {
+                    this.showError('Preencha todos os campos');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`https://word-game-api-mfko.onrender.com/room/join/${code}?` + new URLSearchParams({
+                        player_name: this.playerName
+                    }), {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    this.roomCode = code;
+                    this.isOwner = false;
+                    this.showWaitingRoom();
+                } catch (error) {
+                    this.showError('Erro ao entrar na sala');
+                    console.error('Erro:', error);
+                }
+            }
+
+            showWaitingRoom() {
+                document.getElementById('menu').classList.add('hidden');
+                document.getElementById('waiting-room').classList.remove('hidden');
+                document.getElementById('room-code-display').textContent = this.roomCode;
+                document.getElementById('start-game-btn').classList.toggle('hidden', !this.isOwner);
+                
+                this.startRoomUpdates();
+            }
+
+            async startRoomUpdates() {
+                if (this.updateInterval) {
+                    clearInterval(this.updateInterval);
+                }
+                
+                const updateRoom = async () => {
+                    try {
+                        const response = await fetch(`https://word-game-api-mfko.onrender.com/room/${this.roomCode}`);
+                        const data = await response.json();
+                        
+                        // Atualizar lista de jogadores
+                        const playersList = document.getElementById('players-list');
+                        playersList.innerHTML = data.players.map(player => `
+                            <li>
+                                ${player.name}
+                                ${player.completed ? `<span class="score">Pontos: ${player.score}</span>` : ''}
+                            </li>
+                        `).join('');
+                        
+                        if (data.started && !this.gameActive) {
+                            this.startGameScreen();
+                        }
+                        
+                        if (data.finished && !this.gameOver) {
+                            this.showGameResults(data.players);
+                        }
+                    } catch (error) {
+                        console.error('Erro ao atualizar sala:', error);
+                    }
+                };
+                
+                await updateRoom();
+                this.updateInterval = setInterval(updateRoom, 1000);
+            }
+
+            copyRoomCode() {
+                navigator.clipboard.writeText(this.roomCode)
+                    .then(() => this.showError('Código copiado!'))
+                    .catch(err => console.error('Erro ao copiar:', err));
+            }
+
+            async startGame() {
+                try {
+                    const response = await fetch(`https://word-game-api-mfko.onrender.com/room/start/${this.roomCode}?` + new URLSearchParams({
+                        player_name: this.playerName
+                    }), {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    this.targetWord = data.word;
+                    this.startGameScreen();
+                } catch (error) {
+                    this.showError('Erro ao iniciar o jogo');
+                    console.error('Erro:', error);
+                }
+            }
+
+            startGameScreen() {
+                document.getElementById('waiting-room').classList.add('hidden');
+                document.getElementById('game-screen').classList.remove('hidden');
+                this.gameActive = true;
+                this.createGrid();
+                this.createKeyboard();
+            }
+
+            showGameResults(players) {
+                this.gameOver = true;
+                const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+                const message = `
+                    Jogo terminado!\n\n
+                    Placar:\n
+                    ${sortedPlayers.map((p, i) => `${i + 1}. ${p.name}: ${p.score} pontos`).join('\n')}
+                `;
+                alert(message);
+            }
+
             async initializeGame() {
                 try {
                     // Buscar a lista de palavras do servidor
@@ -280,17 +563,8 @@
                     const data = await response.json();
                     this.words = data.words;
                     this.validWords = new Set(this.words);
-                    
-                    // Buscar uma palavra aleatória do servidor
-                    const randomResponse = await fetch('https://word-game-api-mfko.onrender.com/random');
-                    const randomData = await randomResponse.json();
-                    this.targetWord = randomData.word;
-                    
-                    // Começar o jogo
-                    this.gameActive = true;
-                    console.log("Palavra:", this.targetWord); // Para debug
                 } catch (error) {
-                    this.showError('Erro ao conectar com o servidor. Verifique se o servidor está rodando.');
+                    this.showError('Erro ao conectar com o servidor');
                     console.error('Erro:', error);
                 }
             }
@@ -324,16 +598,27 @@
 
                 const result = this.checkGuess(guess);
                 this.updateColors(result);
-                
-                if (guess === this.targetWord || this.currentAttempt === 5) {
-                    this.gameOver = true;
-                    setTimeout(() => {
-                        alert(guess === this.targetWord ? 
-                            'Parabéns! Você acertou!' : 
-                            `Game Over! A palavra era ${this.targetWord}`);
-                    }, 500);
-                } else {
-                    this.currentAttempt++;
+
+                try {
+                    const response = await fetch(`https://word-game-api-mfko.onrender.com/room/${this.roomCode}/attempt?` + new URLSearchParams({
+                        player_name: this.playerName,
+                        attempt: guess
+                    }), {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    
+                    if (data.correct) {
+                        this.showError(`Parabéns! Você fez ${data.score} pontos!`);
+                        this.gameOver = true;
+                    } else if (this.currentAttempt === 5) {
+                        this.gameOver = true;
+                        this.showError(`Game Over! A palavra era ${this.targetWord}`);
+                    } else {
+                        this.currentAttempt++;
+                    }
+                } catch (error) {
+                    console.error('Erro ao enviar tentativa:', error);
                 }
             }
 
