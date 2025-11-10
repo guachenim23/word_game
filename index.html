@@ -289,10 +289,17 @@
                 const wsUrl = isProduction 
                     ? 'wss://word-game-api-mfko.onrender.com/ws/game'
                     : 'ws://localhost:8000/ws/game';
+                
+                console.log('Conectando ao WebSocket:', wsUrl);
                 this.ws = new WebSocket(wsUrl);
                 
                 this.ws.onopen = () => {
-                    console.log('Conectado ao servidor');
+                    console.log('WebSocket conectado com sucesso');
+                };
+                
+                this.ws.onerror = (error) => {
+                    console.error('Erro no WebSocket:', error);
+                    this.showError('Erro de conexão com o servidor');
                 };
                 
                 this.ws.onclose = () => {
@@ -454,6 +461,7 @@
             }
 
             createRoom() {
+                console.log('Iniciando criação de sala');
                 const nameInput = document.getElementById('player-name');
                 this.playerName = nameInput.value.trim();
                 
@@ -462,12 +470,18 @@
                     return;
                 }
 
+                console.log('Estado do WebSocket:', this.ws.readyState);
                 if (this.ws.readyState === WebSocket.OPEN) {
-                    this.ws.send(JSON.stringify({
+                    const message = JSON.stringify({
                         type: 'CREATE_ROOM',
                         playerName: this.playerName
-                    }));
+                    });
+                    console.log('Enviando mensagem:', message);
+                    this.ws.send(message);
+                } else if (this.ws.readyState === WebSocket.CONNECTING) {
+                    this.showError('Aguarde, conectando ao servidor...');
                 } else {
+                    console.error('WebSocket não está conectado:', this.ws.readyState);
                     this.showError('Erro de conexão. Tente novamente.');
                 }
             }
