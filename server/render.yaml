@@ -3,7 +3,7 @@ services:
     name: word-game-api
     env: python
     buildCommand: cd server && pip install -r requirements-prod.txt
-    startCommand: cd server && gunicorn -w 1 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT --timeout 300 --keep-alive 5 --log-level debug --worker-connections 1000
+    startCommand: cd server && gunicorn -w 1 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT --timeout 300 --keep-alive 5 --log-level debug --worker-connections 1000 --forwarded-allow-ips="*"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9

@@ -16,7 +16,8 @@ app.add_middleware(
         "http://localhost:8000",
         "http://localhost",
         "https://guachenim23.github.io",
-        "https://word-game-api-mfko.onrender.com"
+        "https://word-game-api-mfko.onrender.com",
+        "https://word-game-api-mfko.onrender.com:443"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -119,10 +120,12 @@ def generate_room_code():
 @app.websocket("/ws/game")
 async def websocket_endpoint(websocket: WebSocket):
     """Endpoint WebSocket principal para o jogo"""
-    print("Nova conexão WebSocket recebida")
+    print(f"Nova conexão WebSocket recebida de {websocket.client}")
+    print(f"Headers: {websocket.headers}")
     try:
         await websocket.accept()
-        print("Conexão WebSocket aceita")
+        print("Conexão WebSocket aceita com sucesso")
+        await websocket.send_json({"type": "CONNECTION_ESTABLISHED"})
         
         async for raw_data in websocket:
             try:
@@ -326,6 +329,17 @@ async def validate_word(word: str):
 async def get_words():
     """Retorna a lista de palavras possíveis"""
     return {"words": WORDS}
+
+@app.websocket("/ws/health")
+async def websocket_health(websocket: WebSocket):
+    """Health check endpoint for WebSocket"""
+    try:
+        await websocket.accept()
+        await websocket.send_json({"status": "healthy"})
+        await websocket.close()
+    except Exception as e:
+        print(f"Health check failed: {e}")
+        raise
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
