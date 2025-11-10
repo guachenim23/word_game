@@ -12,10 +12,16 @@ app = FastAPI()
 # Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, especifique os domínios permitidos
+    allow_origins=[
+        "http://localhost:8000",
+        "http://localhost",
+        "https://guachenim23.github.io",
+        "*"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_websockets=True
 )
 
 # Gerenciador de conexões WebSocket
@@ -113,10 +119,13 @@ def generate_room_code():
 @app.websocket("/ws/game")
 async def websocket_endpoint(websocket: WebSocket):
     """Endpoint WebSocket principal para o jogo"""
+    print("Nova conexão WebSocket recebida")
     try:
-        print("Nova conexão WebSocket recebida")
         await websocket.accept()
         print("Conexão WebSocket aceita")
+    except Exception as e:
+        print(f"Erro ao aceitar conexão WebSocket: {e}")
+        return
         
         async for raw_data in websocket:
             try:
