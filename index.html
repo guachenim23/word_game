@@ -2,8 +2,38 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo de Palavras</title>
+    <meta name="viewport" content="width=device-width, initial-scale.key {
+    padding: 15px;
+    min-width: 30px;
+    text-align: center;
+    background-color: #e0e0e0;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.key.correct {
+    background-color: #4CAF50;
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.key.present {
+    background-color: #ffd700;
+    color: white;
+    transform: scale(1.05);
+}
+
+.key.disabled {
+    background-color: #666;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: scale(0.95);
+}le>Jogo de Palavras</title>
     <style>
 * {
     margin: 0;
@@ -153,7 +183,7 @@ button:hover {
 
 .key.disabled {
     background-color: #666;
-    color: white;
+    color: black;
     cursor: not-allowed;
 }
 
@@ -511,12 +541,21 @@ class WordGame {
             const letter = guess[index];
             const key = document.querySelector(`.key[data-key="${letter}"]`);
             if (key) {
+                // Remover classes antigas se existirem
+                key.classList.remove('correct', 'present', 'disabled');
+                
                 if (color === 'green') {
-                    key.classList.add('green');
-                } else if (color === 'yellow' && !key.classList.contains('green')) {
-                    key.classList.add('yellow');
-                } else if (color === 'gray' && !key.classList.contains('green') && !key.classList.contains('yellow')) {
-                    key.classList.add('disabled');
+                    key.classList.add('correct');
+                } else if (color === 'yellow') {
+                    // Adiciona 'present' apenas se a letra não estiver já marcada como 'correct'
+                    if (!key.classList.contains('correct')) {
+                        key.classList.add('present');
+                    }
+                } else if (color === 'gray') {
+                    // Adiciona 'disabled' apenas se a letra não estiver marcada como 'correct' ou 'present'
+                    if (!key.classList.contains('correct') && !key.classList.contains('present')) {
+                        key.classList.add('disabled');
+                    }
                 }
             }
         });
