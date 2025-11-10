@@ -2,38 +2,8 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale.key {
-    padding: 15px;
-    min-width: 30px;
-    text-align: center;
-    background-color: #e0e0e0;
-    border: none;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.key.correct {
-    background-color: #4CAF50;
-    color: white;
-    transform: scale(1.05);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.key.present {
-    background-color: #ffd700;
-    color: white;
-    transform: scale(1.05);
-}
-
-.key.disabled {
-    background-color: #666;
-    color: rgba(255, 255, 255, 0.5);
-    cursor: not-allowed;
-    opacity: 0.7;
-    transform: scale(0.95);
-}le>Jogo de Palavras</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Palavras</title>
     <style>
 * {
     margin: 0;
@@ -42,25 +12,28 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
+    color: #fff;
 }
 
 .container {
     width: 100%;
-    max-width: 600px;
+    max-width: 800px;
     padding: 20px;
 }
 
 .screen {
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .hidden {
@@ -72,119 +45,260 @@ body {
     text-align: center;
 }
 
+#initial-screen h1 {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+    color: #4CAF50;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
 .input-group {
     margin: 20px 0;
 }
 
 input[type="text"] {
-    padding: 10px;
+    padding: 12px 20px;
     font-size: 16px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    width: 200px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    width: 250px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .button-group {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 button {
-    padding: 10px 20px;
+    padding: 12px 25px;
     font-size: 16px;
     border: none;
-    border-radius: 5px;
-    background-color: #4CAF50;
+    border-radius: 8px;
+    background: #4CAF50;
     color: white;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
 button:hover {
     background-color: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Sala de espera */
+#waiting-screen {
+    text-align: center;
+}
+
+#waiting-screen h2 {
+    color: #4CAF50;
+    margin-bottom: 20px;
+}
+
+.room-info {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.room-code {
+    font-size: 24px;
+    font-weight: bold;
+    color: #4CAF50;
+    text-align: center;
+    padding: 10px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.players-list {
+    margin: 20px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.players-list li {
+    padding: 10px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.players-list li::before {
+    content: "•";
+    color: #4CAF50;
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+.start-game-btn {
+    margin-top: 20px;
+    background: #4CAF50;
+    width: 200px;
 }
 
 /* Tela do jogo */
 .game-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 20px;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
 }
 
 #game-grid {
     display: grid;
     grid-template-rows: repeat(6, 1fr);
-    gap: 5px;
-    margin-bottom: 20px;
+    gap: 8px;
+    margin: 30px auto;
+    max-width: 350px;
 }
 
 .grid-row {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 5px;
+    gap: 8px;
 }
 
 .grid-cell {
     aspect-ratio: 1;
-    border: 2px solid #ddd;
+    border: 2px solid rgba(255, 255, 255, 0.2);
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
     text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
 }
 
 .grid-cell.filled {
-    border-color: #666;
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.02);
+}
+
+.grid-cell.current {
+    border-color: #4CAF50;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+    transform: scale(1.05);
+}
+
+.grid-cell:hover:not(.filled):not(.green):not(.yellow):not(.gray) {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
 }
 
 .grid-cell.green {
     background-color: #4CAF50;
     color: white;
     border-color: #4CAF50;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
 }
 
 .grid-cell.yellow {
     background-color: #ffd700;
     color: white;
     border-color: #ffd700;
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
 }
 
 .grid-cell.gray {
     background-color: #666;
     color: white;
     border-color: #666;
+    opacity: 0.7;
 }
 
 #keyboard {
     display: grid;
-    gap: 5px;
+    gap: 8px;
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
 }
 
 .keyboard-row {
     display: flex;
     justify-content: center;
-    gap: 5px;
+    gap: 6px;
 }
 
 .key {
-    padding: 15px;
-    min-width: 30px;
+    padding: 20px;
+    min-width: 40px;
     text-align: center;
-    background-color: #e0e0e0;
+    background: rgba(255, 255, 255, 0.1);
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
+    color: #fff;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.key:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.key.correct {
+    background-color: #4CAF50;
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+}
+
+.key.present {
+    background-color: #ffd700;
+    color: white;
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
 }
 
 .key.disabled {
     background-color: #666;
-    color: black;
+    color: rgba(255, 255, 255, 0.5);
     cursor: not-allowed;
+    opacity: 0.7;
+    transform: scale(0.95);
 }
 
 /* Tela de fim de jogo */
@@ -192,32 +306,56 @@ button:hover {
     text-align: center;
 }
 
+#end-message {
+    color: #4CAF50;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
 #game-stats {
     margin: 20px 0;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
 }
 
 #leaderboard {
     margin: 20px 0;
 }
 
+#leaderboard h3 {
+    color: #4CAF50;
+    margin-bottom: 15px;
+}
+
 #leaderboard-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 #leaderboard-table th,
 #leaderboard-table td {
-    padding: 10px;
-    border: 1px solid #ddd;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
 }
 
 #leaderboard-table th {
-    background-color: #f5f5f5;
+    background: rgba(76, 175, 80, 0.2);
+    font-weight: bold;
+}
+
+#leaderboard-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
 }
 
 #play-again {
-    margin-top: 20px;
+    margin-top: 30px;
+    padding: 15px 30px;
 }
     </style>
 </head>
@@ -237,6 +375,22 @@ button:hover {
                 <input type="text" id="room-code" placeholder="Código da sala" maxlength="5">
                 <button id="join-room-submit">Entrar</button>
             </div>
+        </div>
+
+        <!-- Tela de espera -->
+        <div id="waiting-screen" class="screen hidden">
+            <h2>Sala de Espera</h2>
+            <div class="room-info">
+                <p>Código da sala:</p>
+                <div class="room-code"><span id="waiting-room-code"></span></div>
+            </div>
+            <div class="players-container">
+                <h3>Jogadores na sala:</h3>
+                <ul class="players-list" id="players-list">
+                    <!-- Lista de jogadores será preenchida via JavaScript -->
+                </ul>
+            </div>
+            <button id="start-game" class="start-game-btn">Iniciar Jogo</button>
         </div>
 
         <!-- Tela do jogo -->
@@ -290,12 +444,19 @@ class WordGame {
         this.startTime = null;
         this.playerName = '';
         this.roomCode = '';
+        this.isRoomOwner = false;
+        this.knownPositions = new Set(); // Armazena posições das letras já descobertas
+        this.playersList = new Set();
+        this.gameStarted = false;
         this.setupEventListeners();
         this.createGameGrid();
         this.createKeyboard();
 
-        // Carregar salas existentes do localStorage ou inicializar array vazio
+        // Inicializar ou carregar salas
         this.rooms = JSON.parse(localStorage.getItem('wordGameRooms')) || [];
+        
+        // Iniciar verificação periódica da sala
+        setInterval(() => this.checkRoomUpdates(), 1000);
     }
 
     setupEventListeners() {
@@ -305,6 +466,7 @@ class WordGame {
         });
         document.getElementById('join-room-submit').addEventListener('click', () => this.joinRoom());
         document.getElementById('play-again').addEventListener('click', () => this.resetGame());
+        document.getElementById('start-game').addEventListener('click', () => this.startGameSession());
         
         document.addEventListener('keydown', (e) => {
             if (!this.gameActive) return;
@@ -316,6 +478,17 @@ class WordGame {
             } else if (/^[A-Za-z]$/.test(e.key)) {
                 this.addLetter(e.key.toUpperCase());
             }
+        });
+
+        // Adicionar listener para copiar código da sala ao clicar
+        document.getElementById('waiting-room-code').addEventListener('click', () => {
+            navigator.clipboard.writeText(this.roomCode)
+                .then(() => {
+                    alert('Código da sala copiado!');
+                })
+                .catch(err => {
+                    console.error('Erro ao copiar código:', err);
+                });
         });
     }
 
@@ -332,10 +505,76 @@ class WordGame {
                 cell.className = 'grid-cell';
                 cell.dataset.row = i;
                 cell.dataset.col = j;
+                
+                // Adicionar evento de clique para seleção da célula
+                cell.addEventListener('click', () => this.selectCell(i, j));
+                
                 row.appendChild(cell);
             }
             
             gameGrid.appendChild(row);
+        }
+        
+        // Marcar a primeira célula como atual
+        this.updateCurrentCell();
+    }
+
+    updatePlayersList() {
+        const playersList = document.getElementById('players-list');
+        playersList.innerHTML = '';
+        
+        this.playersList.forEach(player => {
+            const li = document.createElement('li');
+            li.textContent = player;
+            playersList.appendChild(li);
+        });
+
+        // Mostrar/ocultar botão de início com base em ser o dono da sala
+        const startButton = document.getElementById('start-game');
+        startButton.style.display = this.isRoomOwner ? 'block' : 'none';
+    }
+
+    checkRoomUpdates() {
+        if (!this.roomCode) return;
+
+        const room = this.rooms.find(r => r.code === this.roomCode);
+        if (!room) return;
+
+        // Atualizar lista de jogadores
+        this.playersList = new Set(room.players.map(p => p.name));
+        this.updatePlayersList();
+
+        // Verificar se o jogo começou
+        if (room.gameStarted && !this.gameStarted) {
+            this.startGame(room.word);
+        }
+    }
+    
+    selectCell(row, col) {
+        if (!this.gameActive || row !== this.currentAttempt) return;
+        
+        // Não permitir selecionar células já preenchidas ou posições corretas
+        const cell = document.querySelector(
+            `.grid-cell[data-row="${row}"][data-col="${col}"]`
+        );
+        if (cell.classList.contains('filled') || this.knownPositions.has(col)) return;
+
+        this.currentPosition = col;
+        this.updateCurrentCell();
+    }
+
+    updateCurrentCell() {
+        // Remover classe 'current' de todas as células
+        document.querySelectorAll('.grid-cell').forEach(cell => {
+            cell.classList.remove('current');
+        });
+
+        // Adicionar classe 'current' na célula atual
+        const currentCell = document.querySelector(
+            `.grid-cell[data-row="${this.currentAttempt}"][data-col="${this.currentPosition}"]`
+        );
+        if (currentCell) {
+            currentCell.classList.add('current');
         }
     }
 
@@ -401,8 +640,9 @@ class WordGame {
             players: [{
                 name: this.playerName,
                 attempts: 0,
-                startTime: Date.now()
+                startTime: null
             }],
+            gameStarted: false,
             leaderboard: []
         };
 
@@ -410,7 +650,8 @@ class WordGame {
         localStorage.setItem('wordGameRooms', JSON.stringify(this.rooms));
         
         this.roomCode = roomCode;
-        this.startGame(word);
+        this.isRoomOwner = true;
+        this.showWaitingRoom();
     }
 
     joinRoom() {
@@ -428,20 +669,63 @@ class WordGame {
             return;
         }
 
+        if (room.gameStarted) {
+            alert('Este jogo já começou!');
+            return;
+        }
+
+        if (room.players.some(p => p.name === this.playerName)) {
+            alert('Este nome já está em uso na sala');
+            return;
+        }
+
         room.players.push({
             name: this.playerName,
             attempts: 0,
-            startTime: Date.now()
+            startTime: null
         });
         localStorage.setItem('wordGameRooms', JSON.stringify(this.rooms));
 
         this.roomCode = roomCode;
+        this.isRoomOwner = false;
+        this.showWaitingRoom();
+    }
+
+    showWaitingRoom() {
+        document.getElementById('initial-screen').classList.add('hidden');
+        document.getElementById('waiting-screen').classList.remove('hidden');
+        document.getElementById('waiting-room-code').textContent = this.roomCode;
+        
+        const room = this.rooms.find(r => r.code === this.roomCode);
+        this.playersList = new Set(room.players.map(p => p.name));
+        this.updatePlayersList();
+    }
+
+    startGameSession() {
+        if (!this.isRoomOwner) return;
+
+        const room = this.rooms.find(r => r.code === this.roomCode);
+        if (!room) return;
+
+        if (room.players.length < 1) {
+            alert('Aguarde pelo menos um jogador entrar na sala');
+            return;
+        }
+
+        // Iniciar o jogo
+        room.gameStarted = true;
+        room.players.forEach(player => {
+            player.startTime = Date.now();
+        });
+        localStorage.setItem('wordGameRooms', JSON.stringify(this.rooms));
+
         this.startGame(room.word);
     }
 
     startGame(word) {
         this.currentWord = word;
-        document.getElementById('initial-screen').classList.add('hidden');
+        this.gameStarted = true;
+        document.getElementById('waiting-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
         document.getElementById('room-code-display').textContent = this.roomCode;
         this.gameActive = true;
@@ -464,18 +748,83 @@ class WordGame {
     addLetter(letter) {
         if (!this.gameActive || this.currentPosition >= 5) return;
 
+        // Se a posição atual for uma posição correta já descoberta, não permitir alteração
+        if (this.knownPositions.has(this.currentPosition)) {
+            // Encontrar próxima posição disponível que não seja uma posição correta
+            let nextPosition = this.currentPosition + 1;
+            while (nextPosition < 5 && this.knownPositions.has(nextPosition)) {
+                nextPosition++;
+            }
+            if (nextPosition < 5) {
+                this.currentPosition = nextPosition;
+                this.updateCurrentCell();
+            }
+            return;
+        }
+
         const cell = document.querySelector(
             `.grid-cell[data-row="${this.currentAttempt}"][data-col="${this.currentPosition}"]`
         );
         cell.textContent = letter;
         cell.classList.add('filled');
-        this.currentPosition++;
+        
+        // Encontrar próxima posição disponível que não seja uma posição correta
+        let nextPosition = this.currentPosition + 1;
+        while (nextPosition < 5) {
+            if (!this.knownPositions.has(nextPosition)) {
+                const nextCell = document.querySelector(
+                    `.grid-cell[data-row="${this.currentAttempt}"][data-col="${nextPosition}"]`
+                );
+                if (!nextCell.classList.contains('filled')) {
+                    break;
+                }
+            }
+            nextPosition++;
+        }
+        
+        // Se não encontrar próxima posição, procurar posição anterior disponível
+        if (nextPosition >= 5) {
+            nextPosition = this.currentPosition - 1;
+            while (nextPosition >= 0) {
+                if (!this.knownPositions.has(nextPosition)) {
+                    const nextCell = document.querySelector(
+                        `.grid-cell[data-row="${this.currentAttempt}"][data-col="${nextPosition}"]`
+                    );
+                    if (!nextCell.classList.contains('filled')) {
+                        break;
+                    }
+                }
+                nextPosition--;
+            }
+        }
+        
+        // Atualizar posição atual se encontrou uma posição válida que não seja uma posição correta
+        if (nextPosition >= 0 && nextPosition < 5 && !this.knownPositions.has(nextPosition)) {
+            this.currentPosition = nextPosition;
+            this.updateCurrentCell();
+        } else {
+            this.currentPosition = 5; // Todas as células preenchidas
+        }
     }
 
     deleteLetter() {
         if (!this.gameActive || this.currentPosition === 0) return;
 
-        this.currentPosition--;
+        // Se a posição atual for uma posição correta, não permitir deleção
+        let position = this.currentPosition;
+        if (position === 5) {
+            // Se estamos no final, procurar a última posição não-correta
+            position = 4;
+            while (position >= 0 && this.knownPositions.has(position)) {
+                position--;
+            }
+            if (position < 0) return; // Não há posições para deletar
+        }
+
+        // Se a posição atual for uma posição correta, não permitir deleção
+        if (this.knownPositions.has(position)) return;
+
+        this.currentPosition = position;
         const cell = document.querySelector(
             `.grid-cell[data-row="${this.currentAttempt}"][data-col="${this.currentPosition}"]`
         );
@@ -536,6 +885,11 @@ class WordGame {
                 `.grid-cell[data-row="${this.currentAttempt}"][data-col="${index}"]`
             );
             cell.classList.add(color);
+            
+            // Se a letra estiver na posição correta, armazenar a posição
+            if (color === 'green') {
+                this.knownPositions.add(index);
+            }
             
             // Atualizar teclado
             const letter = guess[index];
