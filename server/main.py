@@ -114,17 +114,23 @@ def generate_room_code():
 async def websocket_endpoint(websocket: WebSocket):
     """Endpoint WebSocket principal para o jogo"""
     try:
+        print("Nova conexão WebSocket recebida")
         await websocket.accept()
+        print("Conexão WebSocket aceita")
         
         async for raw_data in websocket:
             try:
+                print(f"Recebido: {raw_data}")
                 data = json.loads(raw_data)
                 message_type = data.get("type")
                 player_name = data.get("playerName")
+                print(f"Tipo de mensagem: {message_type}, Jogador: {player_name}")
                 
                 if message_type == "CREATE_ROOM":
+                    print(f"Criando sala para o jogador {player_name}")
                     code = generate_room_code()
                     word = random.choice(WORDS)
+                    print(f"Sala criada: {code}, Palavra: {word}")
                     
                     room = Room(
                         code=code,
@@ -134,12 +140,16 @@ async def websocket_endpoint(websocket: WebSocket):
                         }
                     )
                     ROOMS[code] = room
+                    print(f"Sala {code} inicializada com sucesso")
                     
+                    print(f"Conectando jogador {player_name} à sala {code}")
                     await manager.connect(websocket, code)
+                    print(f"Enviando confirmação de criação da sala {code}")
                     await websocket.send_json({
                         "type": "ROOM_CREATED",
                         "roomCode": code
                     })
+                    print(f"Confirmação de criação da sala {code} enviada")
                 
                 elif message_type == "JOIN_ROOM":
                     code = data.get("roomCode")
